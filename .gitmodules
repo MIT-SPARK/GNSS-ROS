@@ -1,0 +1,8 @@
+[submodule "ublox"]
+	path = ublox
+	url = git@github.com:KumarRobotics/ublox.git
+	branch = ros2
+[submodule "ntrip_client"]
+	path = ntrip_client
+	url = git@github.com:LORD-MicroStrain/ntrip_client.git
+	branch = ros2
