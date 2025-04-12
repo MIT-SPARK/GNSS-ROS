@@ -1,24 +1,20 @@
 ublox_gps_node:
   ros__parameters:
-    debug: 0                    # 0-4 (0 means no debug statements)
+    debug: 0
     device: /dev/ttyACM0
     frame_id: gps
-    uart1:
-      baudrate: 115200
-      out: 0
-    tmode3: 0                   # Disable survey-in mode
+    rate: 4.0
+    nav_rate: 1
 
-    inf:
-      all: true                 # Whether to display all INF messages in console
+    tmode3: 0
+    sv_in.reset: false
+
+    gnss.glonass: true
+    gnss.beidou: true
+    gnss.galileo: true
+
+    inf.all: true
     
-    publish:
-      all: true
-      aid:
-        hui: false
-      nav:
-        posecef: false
-
-    gnss:
-      glonass: true
-      beidou: true
-      galileo: true
+    publish.all: true
+    publish.aid.hui: false
+    publish.nav.posecef: false
