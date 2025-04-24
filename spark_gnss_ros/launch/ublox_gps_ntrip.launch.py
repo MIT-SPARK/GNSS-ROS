@@ -29,7 +29,7 @@ def launch_setup(context, *args, **kwargs):
         output="screen",
         parameters=[
             params,
-            ("device", LaunchConfiguration("device")),
+            {"device", LaunchConfiguration("device")},
         ],
         remappings=[
             ("~/fix", "/fix"),
