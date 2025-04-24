@@ -1,3 +1,5 @@
+import branca.colormap as cm
+import numpy as np
 import click
 import rclpy
 from rclpy.serialization import deserialize_message
@@ -30,20 +32,28 @@ def extract_gps_from_rosbag2(db3_path: Path, topic_name: str = "/fix"):
     cursor.execute("SELECT data FROM messages WHERE topic_id=?", (topic_id,))
     for row in tqdm(cursor.fetchall(), total=msg_count, desc="Extracting GPS data"):
         msg = deserialize_message(row[0], msg_type)
-        gps_data.append((msg.latitude, msg.longitude))
+        cov_matrix = np.array(msg.position_covariance).reshape(3, 3)
+        cov_scalar = np.trace(cov_matrix[:3, :3]) # ignore altitude
+        gps_data.append((msg.latitude, msg.longitude, cov_scalar))
 
     conn.close()
     return gps_data
 
 
-def plot_gps_on_map(gps_points, output_file="gps_map.html"):
-    if not gps_points:
-        raise ValueError("No GPS points to plot.")
+def plot_gps_on_map(gps_data, output_file="gps_map.html"):
+    # Coords and covariances
+    coords = [(lat, lon) for lat, lon, _ in gps_data]
+    covariances = np.array([cov for _, _, cov in gps_data])
+
+    # Normalize covariances to 0-1
+    norm_cov = (covariances - covariances.min()) / (covariances.ptp() + 1e-6)
+
+    # Create colormap: green → yellow → red
+    colormap = cm.linear.YlOrRd_09.scale(0, 1)
 
     # Center the map on the first point
-    m = folium.Map(location=gps_points[0], zoom_start=15)
+    m = folium.Map(location=coords[0], zoom_start=15)
 
-    # Optional: satellite tiles
     folium.TileLayer(
         tiles="https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
         attr="Google Satellite",
@@ -53,11 +63,14 @@ def plot_gps_on_map(gps_points, output_file="gps_map.html"):
     ).add_to(m)
 
     # Plot all points
-    for coord in tqdm(gps_points, total=len(gps_points), desc="Plotting GPS data"):
-        folium.CircleMarker(location=coord, radius=3, color="red", fill=True).add_to(m)
+    for i, coord in tqdm(
+        enumerate(coords), total=len(gps_data), desc="Plotting GPS data"
+    ):
+        color = colormap(norm_cov[i])
+        folium.CircleMarker(location=coord, radius=3, color=color, fill=True).add_to(m)
 
-    # Optionally connect them with a line
-    folium.PolyLine(gps_points, color="blue", weight=2.5, opacity=0.8).add_to(m)
+    colormap.caption = "GPS Covariance (Uncertainty)"
+    colormap.add_to(m)
 
     # Save the map
     m.save(output_file)
