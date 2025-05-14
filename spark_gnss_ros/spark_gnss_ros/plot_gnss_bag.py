@@ -1,11 +1,11 @@
+#!/usr/bin/env python3
+
 import branca.colormap as cm
 import numpy as np
 import click
-import rclpy
 from rclpy.serialization import deserialize_message
 from rosidl_runtime_py.utilities import get_message
 import sqlite3
-import os
 import folium
 from pathlib import Path
 from tqdm import tqdm
@@ -33,7 +33,7 @@ def extract_gps_from_rosbag2(db3_path: Path, topic_name: str = "/fix"):
     for row in tqdm(cursor.fetchall(), total=msg_count, desc="Extracting GPS data"):
         msg = deserialize_message(row[0], msg_type)
         cov_matrix = np.array(msg.position_covariance).reshape(3, 3)
-        cov_scalar = np.trace(cov_matrix[:3, :3]) # ignore altitude
+        cov_scalar = np.trace(cov_matrix[:3, :3])  # ignore altitude
         gps_data.append((msg.latitude, msg.longitude, cov_scalar))
 
     conn.close()
