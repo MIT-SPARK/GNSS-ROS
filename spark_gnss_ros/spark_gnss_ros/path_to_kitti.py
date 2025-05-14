@@ -5,14 +5,16 @@ import yaml
 import numpy as np
 
 
-def convert_path_to_kitti(input_yaml_file, output_kitti_file):
+def convert_path_to_kitti(
+    input_yaml_file, output_kitti_file, start_idx=None, end_idx=None
+):
     # Load the path from the YAML file
     with open(input_yaml_file, "r") as file:
         path = yaml.safe_load(file)
 
     # Open the KITTI file for writing
     with open(output_kitti_file, "w") as kitti_file:
-        for pose_stamped in path["poses"]:
+        for pose_stamped in path["poses"][start_idx:end_idx]:
             position = pose_stamped["pose"]["position"]
             orientation = pose_stamped["pose"]["orientation"]
 
@@ -44,14 +46,21 @@ def quaternion_to_rotation_matrix(quat):
 def main():
     # Parse command-line arguments
     parser = argparse.ArgumentParser(description="Convert YAML path to KITTI format")
-    parser.add_argument("input_yaml", type=str, help="Input YAML file containing path")
+    parser.add_argument("yaml_path", type=str, help="Path to YAML file containing path")
     parser.add_argument(
-        "output_kitti", type=str, help="Output KITTI file to save the trajectory"
+        "--output", default="path.txt", type=str, help="Output KITTI txt file"
     )
+    parser.add_argument(
+        "--start", type=int, default=None, help="Start index for slicing"
+    )
+    parser.add_argument(
+        "--end", type=int, default=None, help="End index for slicing (exclusive)"
+    )
+
     args = parser.parse_args()
 
     # Convert the path to KITTI format
-    convert_path_to_kitti(args.input_yaml, args.output_kitti)
+    convert_path_to_kitti(args.yaml_path, args.output, args.start, args.end)
 
 
 if __name__ == "__main__":
